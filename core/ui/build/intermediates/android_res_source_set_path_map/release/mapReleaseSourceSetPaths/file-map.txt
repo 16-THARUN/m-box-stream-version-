@@ -1,0 +1,9 @@
+com.mbox.core.ui-pngs-0 C:\Users\HP\MBoxstream\core\ui\build\generated\res\pngs\release
+com.mbox.core.ui-updated_navigation_xml-1 C:\Users\HP\MBoxstream\core\ui\build\generated\updated_navigation_xml\release
+com.mbox.core.ui-mergeReleaseResources-2 C:\Users\HP\MBoxstream\core\ui\build\intermediates\incremental\release\mergeReleaseResources\merged.dir
+com.mbox.core.ui-mergeReleaseResources-3 C:\Users\HP\MBoxstream\core\ui\build\intermediates\incremental\release\mergeReleaseResources\stripped.dir
+com.mbox.core.ui-release-4 C:\Users\HP\MBoxstream\core\ui\build\intermediates\merged_res\release\mergeReleaseResources
+com.mbox.core.ui-release-5 C:\Users\HP\MBoxstream\core\ui\build\intermediates\packaged_res\release\packageReleaseResources
+com.mbox.core.ui-main-6 C:\Users\HP\MBoxstream\core\ui\src\main\res
+com.mbox.core.ui-release-7 C:\Users\HP\MBoxstream\core\ui\src\release\res
+gradleHome-0 C:\Users\HP\.gradle

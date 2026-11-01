@@ -1,0 +1,1 @@
+com.mbox.core.model

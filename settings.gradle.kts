@@ -24,4 +24,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "M-Box stream"
 include(":app")
- 
+include(":core:model")
+include(":core:audio")
+include(":core:ui")
+include(":core:cast")

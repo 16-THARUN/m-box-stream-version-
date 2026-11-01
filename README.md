@@ -19,6 +19,7 @@ Sister app of m-Box Player.
 | `:core:audio` | The audio engine: Media3, decoders, EQ, loudness, output routing |
 | `:core:ui` | Now Playing: vinyl stage, visualizers, lyrics view, theme |
 | `:core:cast` | m-Box Cast: phone server, TV discovery and launch, DLNA |
+| `:core:lyrics` | Lyrics lookups (LRCLIB, iTunes) and the lyrics repository |
 
 ## Build
 Open the folder in Android Studio and run the `app` configuration, or run `./gradlew assembleDebug`.

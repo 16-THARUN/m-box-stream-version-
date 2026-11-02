@@ -19,3 +19,6 @@ keystore.properties
 
 # Gradle download kept locally, never committed
 gradle-*-bin.zip
+
+# Build output in every module (core/*/build, app/build)
+build/

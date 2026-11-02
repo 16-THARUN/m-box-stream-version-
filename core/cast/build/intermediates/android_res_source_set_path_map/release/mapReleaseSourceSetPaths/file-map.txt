@@ -1,9 +1,0 @@
-com.mbox.core.cast-pngs-0 C:\Users\HP\MBoxstream\core\cast\build\generated\res\pngs\release
-com.mbox.core.cast-updated_navigation_xml-1 C:\Users\HP\MBoxstream\core\cast\build\generated\updated_navigation_xml\release
-com.mbox.core.cast-mergeReleaseResources-2 C:\Users\HP\MBoxstream\core\cast\build\intermediates\incremental\release\mergeReleaseResources\merged.dir
-com.mbox.core.cast-mergeReleaseResources-3 C:\Users\HP\MBoxstream\core\cast\build\intermediates\incremental\release\mergeReleaseResources\stripped.dir
-com.mbox.core.cast-release-4 C:\Users\HP\MBoxstream\core\cast\build\intermediates\merged_res\release\mergeReleaseResources
-com.mbox.core.cast-release-5 C:\Users\HP\MBoxstream\core\cast\build\intermediates\packaged_res\release\packageReleaseResources
-com.mbox.core.cast-main-6 C:\Users\HP\MBoxstream\core\cast\src\main\res
-com.mbox.core.cast-release-7 C:\Users\HP\MBoxstream\core\cast\src\release\res
-gradleHome-0 C:\Users\HP\.gradle

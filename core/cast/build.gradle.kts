@@ -4,9 +4,7 @@ plugins {
 
 android {
     namespace = "com.mbox.core.cast"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26
@@ -18,6 +16,21 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
     implementation(project(":core:model"))
+    implementation(project(":core:audio"))
+
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
+    implementation("org.nanohttpd:nanohttpd-websocket:2.3.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.ffmpeg.kit.audio)
+
+    implementation(libs.coroutines.android)
+    implementation(libs.core.ktx)
 }

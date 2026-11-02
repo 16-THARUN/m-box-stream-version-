@@ -3,6 +3,8 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 // Release signing. Values come from keystore.properties (on your PC, never committed)
@@ -66,6 +68,9 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:cast"))
     implementation(project(":core:lyrics"))
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

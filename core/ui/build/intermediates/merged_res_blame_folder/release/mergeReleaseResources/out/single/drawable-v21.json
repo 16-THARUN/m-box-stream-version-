@@ -1,6 +1,0 @@
-[
-    {
-        "merged": "com.mbox.core.ui-release-36:/drawable-v21/notification_action_background.xml",
-        "source": "com.mbox.core.ui-core-1.16.0-14:/drawable-v21/notification_action_background.xml"
-    }
-]

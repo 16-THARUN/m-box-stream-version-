@@ -5,9 +5,7 @@ plugins {
 
 android {
     namespace = "com.mbox.core.ui"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 26
@@ -17,14 +15,40 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
 dependencies {
     implementation(project(":core:model"))
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material3)
+    implementation(project(":core:audio"))
+    implementation(project(":core:cast"))
+    implementation(project(":core:lyrics"))
+
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.preview)
+    debugImplementation(libs.compose.ui.tooling)
+    implementation(libs.activity.compose)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.icons.ext)
+
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
+
+    implementation(libs.glide)
+    implementation(libs.glide.compose)
+    implementation(libs.androidx.palette)
+
+    implementation(libs.coroutines.android)
+    implementation(libs.core.ktx)
 }

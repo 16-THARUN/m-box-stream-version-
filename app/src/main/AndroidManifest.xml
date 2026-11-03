@@ -35,6 +35,15 @@
         </activity>
 
         <service
+            android:name="com.mbox.stream.service.StreamMediaSessionService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
+
+        <service
             android:name="com.mediaplayer.service.TvCastKeepAliveService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />

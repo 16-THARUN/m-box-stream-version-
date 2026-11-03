@@ -19,9 +19,7 @@ val releaseStoreFile = signingValue("storeFile", "MBOX_KEYSTORE_FILE")
 
 android {
     namespace = "com.mbox.stream"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.mbox.stream"
@@ -56,6 +54,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
@@ -68,9 +67,20 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:cast"))
     implementation(project(":core:lyrics"))
+    implementation(project(":source:youtube"))
+
+    implementation(libs.newpipe.extractor)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation)
+    implementation(libs.datastore.prefs)
+
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.session)
+    implementation(libs.media3.ui)
+    implementation(libs.glide)
+    implementation(libs.glide.compose)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -78,8 +88,12 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.compose.icons.ext)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

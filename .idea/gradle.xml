@@ -13,8 +13,11 @@
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/core/audio" />
             <option value="$PROJECT_DIR$/core/cast" />
+            <option value="$PROJECT_DIR$/core/lyrics" />
             <option value="$PROJECT_DIR$/core/model" />
             <option value="$PROJECT_DIR$/core/ui" />
+            <option value="$PROJECT_DIR$/source" />
+            <option value="$PROJECT_DIR$/source/youtube" />
           </set>
         </option>
       </GradleProjectSettings>

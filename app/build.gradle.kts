@@ -70,6 +70,7 @@ dependencies {
     implementation(project(":source:youtube"))
 
     implementation(libs.newpipe.extractor)
+    implementation("com.google.code.gson:gson:2.10.1")
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

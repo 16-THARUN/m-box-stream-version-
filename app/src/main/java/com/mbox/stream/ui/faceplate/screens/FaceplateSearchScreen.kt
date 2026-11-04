@@ -1,7 +1,9 @@
 package com.mbox.stream.ui.faceplate.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -223,7 +225,9 @@ fun FaceplateSearchScreen(
                                 FaceplateSourceTrackRow(
                                     track = track,
                                     isResolvingThisTrack = (resolvingTrackId == track.id),
-                                    onClick = { viewModel.playTrack(track) }
+                                    onClick = { viewModel.playTrack(track) },
+                                    onPlayNext = { viewModel.playNext(track) },
+                                    onAddToQueue = { viewModel.addToQueue(track) }
                                 )
                             }
                         }
@@ -235,96 +239,125 @@ fun FaceplateSearchScreen(
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FaceplateSourceTrackRow(
     track: SourceTrack,
     isResolvingThisTrack: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onPlayNext: () -> Unit,
+    onAddToQueue: () -> Unit
 ) {
     val colors = FaceplateThemeColors
+    var showMenu by remember { mutableStateOf(false) }
 
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = colors.surface,
-        border = BorderStroke(1.dp, colors.line),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-    ) {
-        Row(
-            modifier = Modifier.padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (!track.artworkUrl.isNullOrBlank()) {
-                GlideImage(
-                    model = track.artworkUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(6.dp))
+    Box {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = colors.surface,
+            border = BorderStroke(1.dp, colors.line),
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = { showMenu = true }
                 )
-            } else {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = colors.surfaceRaised,
-                    border = BorderStroke(1.dp, colors.line),
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = colors.textMuted)
+        ) {
+            Row(
+                modifier = Modifier.padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (!track.artworkUrl.isNullOrBlank()) {
+                    GlideImage(
+                        model = track.artworkUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                    )
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = colors.surfaceRaised,
+                        border = BorderStroke(1.dp, colors.line),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.MusicNote, contentDescription = null, tint = colors.textMuted)
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = track.title.uppercase(),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = track.artist.uppercase(),
+                        fontSize = 11.sp,
+                        color = colors.textMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = formatDuration(track.durationMs),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.sp,
+                        color = colors.textSub
+                    )
+                    Text(
+                        text = "YOUTUBE · OPUS",
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.accent,
+                        letterSpacing = 0.08.sp
+                    )
+                }
+
+                if (isResolvingThisTrack) {
+                    Spacer(modifier = Modifier.width(10.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = colors.accent,
+                        strokeWidth = 2.dp
+                    )
+                }
             }
+        }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = track.title.uppercase(),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.text,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = track.artist.uppercase(),
-                    fontSize = 11.sp,
-                    color = colors.textMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatDuration(track.durationMs),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp,
-                    color = colors.textSub
-                )
-                Text(
-                    text = "YOUTUBE · OPUS",
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.accent,
-                    letterSpacing = 0.08.sp
-                )
-            }
-
-            if (isResolvingThisTrack) {
-                Spacer(modifier = Modifier.width(10.dp))
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    color = colors.accent,
-                    strokeWidth = 2.dp
-                )
-            }
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false },
+            modifier = Modifier.background(colors.surfaceRaised)
+        ) {
+            DropdownMenuItem(
+                text = { Text("PLAY NEXT", fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.text) },
+                onClick = {
+                    showMenu = false
+                    onPlayNext()
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("ADD TO QUEUE", fontFamily = FontFamily.Monospace, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.text) },
+                onClick = {
+                    showMenu = false
+                    onAddToQueue()
+                }
+            )
         }
     }
 }

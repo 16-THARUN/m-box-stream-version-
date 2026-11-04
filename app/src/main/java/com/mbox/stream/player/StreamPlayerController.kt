@@ -14,6 +14,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 import com.mediaplayer.data.model.*
+import com.mbox.stream.queue.QueueManager
 import com.mbox.stream.service.StreamMediaSessionService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
@@ -26,7 +27,8 @@ import javax.inject.Singleton
 @Singleton
 @OptIn(UnstableApi::class)
 class StreamPlayerController @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    val queueManager: QueueManager
 ) : PlayerController, CastController {
 
     companion object {
@@ -92,7 +94,23 @@ class StreamPlayerController @Inject constructor(
 
                 when (playbackState) {
                     Player.STATE_ENDED -> {
-                        _nowPlayingState.value = _nowPlayingState.value.copy(isPlaying = false)
+                        val nextItem = queueManager.next()
+                        if (nextItem != null) {
+                            playSourceTrack(
+                                nextItem.sourceTrack,
+                                ResolvedStream(
+                                    url = "mbox://yt/${nextItem.sourceTrack.id}",
+                                    codec = "Opus",
+                                    bitrateKbps = 160,
+                                    sampleRateHz = 48000,
+                                    container = "webm",
+                                    lossy = true,
+                                    expiresAtMs = System.currentTimeMillis() + 14400000L
+                                )
+                            )
+                        } else {
+                            _nowPlayingState.value = _nowPlayingState.value.copy(isPlaying = false)
+                        }
                     }
                     Player.STATE_READY -> {
                         _playbackError.value = null
@@ -150,7 +168,7 @@ class StreamPlayerController @Inject constructor(
             albumArtUri = artworkUri,
             duration = _nowPlayingState.value.durationMs,
             bitrate = bitrate * 1000,
-            sampleRate = 44100,
+            sampleRate = 48000,
             trackNumber = 1,
             discNumber = 1,
             year = 2026,
@@ -171,7 +189,7 @@ class StreamPlayerController @Inject constructor(
                 format = codec.uppercase(),
                 sourceInfo = "$bitrate kbps",
                 decoder = "ExoPlayer (${codec.uppercase()})",
-                hardwareInfo = "44.1 kHz",
+                hardwareInfo = "48.0 kHz",
                 outputApi = "AudioTrack",
                 latency = 0,
                 bitDepth = "16-bit PCM",
@@ -196,7 +214,7 @@ class StreamPlayerController @Inject constructor(
             albumArtUri = sourceTrack.artworkUrl,
             duration = sourceTrack.durationMs,
             bitrate = resolvedStream.bitrateKbps * 1000,
-            sampleRate = resolvedStream.sampleRateHz ?: 44100,
+            sampleRate = resolvedStream.sampleRateHz ?: 48000,
             trackNumber = 1,
             discNumber = 1,
             year = 2026,
@@ -220,7 +238,7 @@ class StreamPlayerController @Inject constructor(
                 format = resolvedStream.codec.uppercase(),
                 sourceInfo = "${resolvedStream.bitrateKbps} kbps",
                 decoder = "ExoPlayer (${resolvedStream.codec.uppercase()})",
-                hardwareInfo = "44.1 kHz",
+                hardwareInfo = "48.0 kHz",
                 outputApi = "AudioTrack",
                 latency = 0,
                 bitDepth = "16-bit PCM",
@@ -299,8 +317,45 @@ class StreamPlayerController @Inject constructor(
         _nowPlayingState.value = _nowPlayingState.value.copy(isPlaying = false)
     }
 
-    override fun next() { mediaController?.seekToNext() }
-    override fun previous() { mediaController?.seekToPrevious() }
+    override fun next() {
+        val nextItem = queueManager.next()
+        if (nextItem != null) {
+            playSourceTrack(
+                nextItem.sourceTrack,
+                ResolvedStream(
+                    url = "mbox://yt/${nextItem.sourceTrack.id}",
+                    codec = "Opus",
+                    bitrateKbps = 160,
+                    sampleRateHz = 48000,
+                    container = "webm",
+                    lossy = true,
+                    expiresAtMs = System.currentTimeMillis() + 14400000L
+                )
+            )
+        } else {
+            mediaController?.seekToNext()
+        }
+    }
+
+    override fun previous() {
+        val prevItem = queueManager.previous()
+        if (prevItem != null) {
+            playSourceTrack(
+                prevItem.sourceTrack,
+                ResolvedStream(
+                    url = "mbox://yt/${prevItem.sourceTrack.id}",
+                    codec = "Opus",
+                    bitrateKbps = 160,
+                    sampleRateHz = 48000,
+                    container = "webm",
+                    lossy = true,
+                    expiresAtMs = System.currentTimeMillis() + 14400000L
+                )
+            )
+        } else {
+            mediaController?.seekToPrevious()
+        }
+    }
 
     override fun seekTo(positionMs: Long) {
         Log.i(TAG, "seekTo($positionMs) called")

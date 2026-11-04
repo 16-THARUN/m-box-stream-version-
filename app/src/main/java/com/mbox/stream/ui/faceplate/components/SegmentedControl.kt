@@ -1,8 +1,9 @@
 package com.mbox.stream.ui.faceplate.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -23,10 +24,12 @@ enum class StageDisplayMode {
     COVER
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SegmentedControl(
     selectedMode: StageDisplayMode,
     onModeSelected: (StageDisplayMode) -> Unit,
+    onLongClickVisual: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = FaceplateThemeColors
@@ -43,7 +46,7 @@ fun SegmentedControl(
                 .padding(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StageDisplayMode.values().forEach { mode ->
+            StageDisplayMode.entries.forEach { mode ->
                 val isSelected = selectedMode == mode
                 Box(
                     modifier = Modifier
@@ -53,7 +56,15 @@ fun SegmentedControl(
                             color = if (isSelected) colors.accent else Color.Transparent,
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .clickable { onModeSelected(mode) },
+                        .combinedClickable(
+                            onClick = { onModeSelected(mode) },
+                            onLongClick = {
+                                if (mode == StageDisplayMode.VISUAL) {
+                                    onModeSelected(mode)
+                                    onLongClickVisual()
+                                }
+                            }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

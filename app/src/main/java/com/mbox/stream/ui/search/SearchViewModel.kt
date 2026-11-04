@@ -6,6 +6,7 @@ import com.mediaplayer.data.model.MusicSource
 import com.mediaplayer.data.model.SourceTrack
 import com.mbox.stream.data.AddOnRepository
 import com.mbox.stream.player.StreamPlayerController
+import com.mbox.stream.queue.QueueManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -27,7 +28,8 @@ sealed interface SearchUiState {
 class SearchViewModel @Inject constructor(
     private val musicSources: Set<@JvmSuppressWildcards MusicSource>,
     private val addOnRepository: AddOnRepository,
-    val playerController: StreamPlayerController
+    val playerController: StreamPlayerController,
+    val queueManager: QueueManager
 ) : ViewModel() {
 
     val isYouTubeEnabled = addOnRepository.isYouTubeEnabled.stateIn(
@@ -85,14 +87,13 @@ class SearchViewModel @Inject constructor(
     }
 
     fun playTrack(sourceTrack: SourceTrack) {
-        // While a song is resolving, ignore further taps on that same song
         if (_resolvingTrackId.value == sourceTrack.id) {
             return
         }
 
-        // Cancel previous resolve if a different song is tapped (only the last tap plays)
         resolveJob?.cancel()
         lastSelectedTrack = sourceTrack
+        queueManager.playNow(sourceTrack)
 
         _resolvingTrackId.value = sourceTrack.id
         _isResolving.value = true
@@ -108,7 +109,6 @@ class SearchViewModel @Inject constructor(
                 val resolvedStream = source.resolve(sourceTrack)
                 playerController.playSourceTrack(sourceTrack, resolvedStream)
             } catch (e: CancellationException) {
-                // Cancelled because another song was tapped
                 throw e
             } catch (e: IOException) {
                 _snackbarEvent.emit("No internet connection")
@@ -120,6 +120,20 @@ class SearchViewModel @Inject constructor(
                     _isResolving.value = false
                 }
             }
+        }
+    }
+
+    fun playNext(sourceTrack: SourceTrack) {
+        queueManager.playNext(sourceTrack)
+        viewModelScope.launch {
+            _snackbarEvent.emit("Added '${sourceTrack.title}' to Play Next")
+        }
+    }
+
+    fun addToQueue(sourceTrack: SourceTrack) {
+        queueManager.addToQueue(sourceTrack)
+        viewModelScope.launch {
+            _snackbarEvent.emit("Added '${sourceTrack.title}' to Queue")
         }
     }
 

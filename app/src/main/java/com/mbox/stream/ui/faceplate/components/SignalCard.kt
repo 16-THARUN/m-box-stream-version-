@@ -63,9 +63,9 @@ fun SignalCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = signal?.format ?: "Opus · 160k",
+                        text = "Opus · 160 kbps · 48 kHz",
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
                         color = colors.textSub,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -96,7 +96,7 @@ fun SignalCard(
                     Text(
                         text = "EQ Off",
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
                         color = colors.textSub,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -125,9 +125,9 @@ fun SignalCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "44.1 kHz",
+                        text = "48.0 kHz",
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
                         color = colors.textSub,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis

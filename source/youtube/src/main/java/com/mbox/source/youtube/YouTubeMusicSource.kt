@@ -44,6 +44,22 @@ class YouTubeMusicSource @Inject constructor() : MusicSource {
                 }
             }
         }
+
+        fun getHighResArtworkUrl(url: String?): String? {
+            if (url.isNullOrBlank()) return null
+            return when {
+                url.contains("googleusercontent.com") -> {
+                    val baseUrl = url.substringBefore("=")
+                    "$baseUrl=w1200-h1200"
+                }
+                url.contains("i.ytimg.com") -> {
+                    url.replace("hqdefault.jpg", "maxresdefault.jpg")
+                        .replace("mqdefault.jpg", "maxresdefault.jpg")
+                        .replace("default.jpg", "maxresdefault.jpg")
+                }
+                else -> url
+            }
+        }
     }
 
     init {
@@ -62,13 +78,14 @@ class YouTubeMusicSource @Inject constructor() : MusicSource {
         val results = searchInfo.relatedItems
             .filterIsInstance<StreamInfoItem>()
             .map { item ->
+                val rawArt = item.thumbnails?.sortedByDescending { it.width }?.firstOrNull()?.url
                 SourceTrack(
                     id = item.url ?: "",
                     title = item.name ?: "Unknown Title",
                     artist = item.uploaderName ?: "Unknown Artist",
                     album = "YouTube Music",
                     durationMs = if (item.duration > 0) item.duration * 1000L else 0L,
-                    artworkUrl = item.thumbnails?.firstOrNull()?.url,
+                    artworkUrl = getHighResArtworkUrl(rawArt) ?: rawArt,
                     sourceId = id
                 )
             }
@@ -134,7 +151,7 @@ class YouTubeMusicSource @Inject constructor() : MusicSource {
             url = streamUrl,
             codec = codecName,
             bitrateKbps = if (bestStream.averageBitrate > 0) bestStream.averageBitrate else 160,
-            sampleRateHz = 44100,
+            sampleRateHz = 48000,
             container = container,
             lossy = true,
             expiresAtMs = System.currentTimeMillis() + (4 * 60 * 60 * 1000L)

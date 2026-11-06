@@ -10,8 +10,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Extension
-import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -24,6 +23,8 @@ import com.mbox.stream.player.StreamPlayerController
 import com.mbox.stream.ui.addons.AddOnViewModel
 import com.mbox.stream.ui.faceplate.components.FaceplateMiniPlayer
 import com.mbox.stream.ui.faceplate.screens.FaceplateAddOnsScreen
+import com.mbox.stream.ui.faceplate.screens.FaceplateLibraryScreen
+import com.mbox.stream.ui.faceplate.screens.FaceplateListenNowScreen
 import com.mbox.stream.ui.faceplate.screens.FaceplateNowPlayingScreen
 import com.mbox.stream.ui.faceplate.screens.FaceplateSearchScreen
 import com.mbox.stream.ui.faceplate.theme.FaceplateColors
@@ -117,8 +118,8 @@ fun MBoxStreamApp(
                                 NavigationBarItem(
                                     selected = selectedTab == 0,
                                     onClick = { selectedTab = 0 },
-                                    icon = { Icon(Icons.Rounded.Search, contentDescription = "SEARCH") },
-                                    label = { Text("SEARCH", fontFamily = FontFamily.Monospace, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.12.sp) },
+                                    icon = { Icon(Icons.Rounded.PlayCircle, contentDescription = "LISTEN NOW") },
+                                    label = { Text("LISTEN NOW", fontFamily = FontFamily.Monospace, fontSize = 9.sp, fontWeight = FontWeight.Bold) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = colors.accent,
                                         selectedTextColor = colors.accent,
@@ -131,8 +132,36 @@ fun MBoxStreamApp(
                                 NavigationBarItem(
                                     selected = selectedTab == 1,
                                     onClick = { selectedTab = 1 },
-                                    icon = { Icon(Icons.Rounded.Extension, contentDescription = "SETTINGS") },
-                                    label = { Text("SETTINGS", fontFamily = FontFamily.Monospace, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.12.sp) },
+                                    icon = { Icon(Icons.Rounded.Search, contentDescription = "SEARCH") },
+                                    label = { Text("SEARCH", fontFamily = FontFamily.Monospace, fontSize = 9.sp, fontWeight = FontWeight.Bold) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = colors.accent,
+                                        selectedTextColor = colors.accent,
+                                        indicatorColor = colors.accent.copy(alpha = 0.15f),
+                                        unselectedIconColor = colors.textMuted,
+                                        unselectedTextColor = colors.textMuted
+                                    )
+                                )
+
+                                NavigationBarItem(
+                                    selected = selectedTab == 2,
+                                    onClick = { selectedTab = 2 },
+                                    icon = { Icon(Icons.Rounded.LibraryMusic, contentDescription = "LIBRARY") },
+                                    label = { Text("LIBRARY", fontFamily = FontFamily.Monospace, fontSize = 9.sp, fontWeight = FontWeight.Bold) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = colors.accent,
+                                        selectedTextColor = colors.accent,
+                                        indicatorColor = colors.accent.copy(alpha = 0.15f),
+                                        unselectedIconColor = colors.textMuted,
+                                        unselectedTextColor = colors.textMuted
+                                    )
+                                )
+
+                                NavigationBarItem(
+                                    selected = selectedTab == 3,
+                                    onClick = { selectedTab = 3 },
+                                    icon = { Icon(Icons.Rounded.Settings, contentDescription = "SETTINGS") },
+                                    label = { Text("SETTINGS", fontFamily = FontFamily.Monospace, fontSize = 9.sp, fontWeight = FontWeight.Bold) },
                                     colors = NavigationBarItemDefaults.colors(
                                         selectedIconColor = colors.accent,
                                         selectedTextColor = colors.accent,
@@ -148,11 +177,19 @@ fun MBoxStreamApp(
             ) { innerPadding ->
                 Box(modifier = Modifier.padding(innerPadding)) {
                     when (selectedTab) {
-                        0 -> FaceplateSearchScreen(
-                            viewModel = searchViewModel,
-                            onNavigateToAddOns = { selectedTab = 1 }
+                        0 -> FaceplateListenNowScreen(
+                            playerController = playerController,
+                            onNavigateToSearch = { selectedTab = 1 }
                         )
-                        1 -> FaceplateAddOnsScreen(
+                        1 -> FaceplateSearchScreen(
+                            viewModel = searchViewModel,
+                            onNavigateToAddOns = { selectedTab = 3 }
+                        )
+                        2 -> FaceplateLibraryScreen(
+                            playerController = playerController,
+                            onNavigateToSearch = { selectedTab = 1 }
+                        )
+                        3 -> FaceplateAddOnsScreen(
                             viewModel = addOnViewModel,
                             selectedAccentColor = selectedAccentColor,
                             onAccentColorSelected = onAccentColorSelected

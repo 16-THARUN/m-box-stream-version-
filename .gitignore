@@ -22,3 +22,6 @@ gradle-*-bin.zip
 
 # Build output in every module (core/*/build, app/build)
 build/
+
+# Private m-Box Player reference (never commit)
+docs/reference/player/

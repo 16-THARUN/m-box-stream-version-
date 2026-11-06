@@ -8,6 +8,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.mediaplayer.data.model.SourceTrack
+import com.mbox.source.youtube.YouTubeMusicSource
+import com.mbox.stream.data.StreamSettingsRepository
 import com.mbox.stream.radio.RadioFilter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +30,9 @@ enum class RepeatMode {
 
 @Singleton
 class QueueManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val youtubeMusicSource: YouTubeMusicSource,
+    private val streamSettingsRepository: StreamSettingsRepository
 ) {
     private val TAG = "MBoxStream"
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -58,6 +62,26 @@ class QueueManager @Inject constructor(
         restoreQueue()
     }
 
+    fun checkAndFetchRadio() {
+        scope.launch {
+            val keepPlaying = streamSettingsRepository.keepPlayingRadio.first()
+            if (!keepPlaying) return@launch
+
+            val curIndex = _currentIndex.value
+            val totalSize = _items.value.size
+            val itemsAfterCurrent = (totalSize - 1 - curIndex).coerceAtLeast(0)
+
+            if (itemsAfterCurrent < 3) {
+                val curItem = currentItem.value ?: return@launch
+                val seedTrack = curItem.sourceTrack
+                val radioTracks = youtubeMusicSource.fetchRadioMix(seedTrack.id)
+                if (radioTracks.isNotEmpty()) {
+                    addRadioItems(radioTracks)
+                }
+            }
+        }
+    }
+
     fun playNow(sourceTrack: SourceTrack) {
         val nowPlayingItem = QueueItem(
             sourceTrack = sourceTrack,
@@ -74,6 +98,7 @@ class QueueManager @Inject constructor(
         _currentIndex.value = 0
         addToHistory(sourceTrack.id)
         saveQueue()
+        checkAndFetchRadio()
     }
 
     fun playNext(sourceTrack: SourceTrack) {
@@ -83,6 +108,7 @@ class QueueManager @Inject constructor(
         list.add(insertIndex, newItem)
         _items.value = list
         saveQueue()
+        checkAndFetchRadio()
     }
 
     fun addToQueue(sourceTrack: SourceTrack) {
@@ -96,6 +122,7 @@ class QueueManager @Inject constructor(
         }
         _items.value = list
         saveQueue()
+        checkAndFetchRadio()
     }
 
     fun addRadioItems(tracks: List<SourceTrack>) {
@@ -136,6 +163,7 @@ class QueueManager @Inject constructor(
             }
             _items.value = list
             saveQueue()
+            checkAndFetchRadio()
         }
     }
 
@@ -147,6 +175,7 @@ class QueueManager @Inject constructor(
             _currentIndex.value = (newQueue.size - 1).coerceAtLeast(0)
         }
         saveQueue()
+        checkAndFetchRadio()
     }
 
     fun moveUpNextItem(fromIndex: Int, toIndex: Int) {
@@ -166,6 +195,7 @@ class QueueManager @Inject constructor(
             val item = list[index]
             addToHistory(item.sourceTrack.id)
             saveQueue()
+            checkAndFetchRadio()
             return item
         }
         return null
@@ -193,6 +223,7 @@ class QueueManager @Inject constructor(
         val item = list[nextIdx]
         addToHistory(item.sourceTrack.id)
         saveQueue()
+        checkAndFetchRadio()
         return item
     }
 
@@ -209,6 +240,7 @@ class QueueManager @Inject constructor(
         val item = list[prevIdx]
         addToHistory(item.sourceTrack.id)
         saveQueue()
+        checkAndFetchRadio()
         return item
     }
 
@@ -270,6 +302,7 @@ class QueueManager @Inject constructor(
                         val restored: List<QueueItem> = gson.fromJson(json, type)
                         _items.value = restored
                         _currentIndex.value = posStr?.toIntOrNull()?.coerceIn(0, (restored.size - 1).coerceAtLeast(0)) ?: 0
+                        checkAndFetchRadio()
                     }
                 }
             } catch (e: Exception) {

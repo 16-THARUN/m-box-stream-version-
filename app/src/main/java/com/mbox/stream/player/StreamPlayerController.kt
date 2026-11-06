@@ -37,6 +37,8 @@ class StreamPlayerController @Inject constructor(
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    val visualizerEngine = com.mediaplayer.util.VisualizerEngine()
+
     private var mediaController: MediaController? = null
 
     private val _nowPlayingState = MutableStateFlow(NowPlayingState())

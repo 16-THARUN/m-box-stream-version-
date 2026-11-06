@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,7 @@ class StreamSettingsRepository @Inject constructor(
     private val youtubeEnabledKey = booleanPreferencesKey("youtube_music_enabled")
     private val keepPlayingRadioKey = booleanPreferencesKey("keep_playing_radio")
     private val maxCacheSizeMbKey = longPreferencesKey("max_cache_size_mb")
+    private val visualizerModeKey = stringPreferencesKey("visualizer_mode")
 
     val isYouTubeEnabled: Flow<Boolean> = context.streamSettingsDataStore.data.map { prefs ->
         prefs[youtubeEnabledKey] ?: false
@@ -31,6 +33,10 @@ class StreamSettingsRepository @Inject constructor(
 
     val maxCacheSizeMb: Flow<Long> = context.streamSettingsDataStore.data.map { prefs ->
         prefs[maxCacheSizeMbKey] ?: 512L
+    }
+
+    val visualizerMode: Flow<String> = context.streamSettingsDataStore.data.map { prefs ->
+        prefs[visualizerModeKey] ?: "circular_rings"
     }
 
     suspend fun setYouTubeEnabled(enabled: Boolean) {
@@ -48,6 +54,12 @@ class StreamSettingsRepository @Inject constructor(
     suspend fun setMaxCacheSizeMb(sizeMb: Long) {
         context.streamSettingsDataStore.edit { prefs ->
             prefs[maxCacheSizeMbKey] = sizeMb
+        }
+    }
+
+    suspend fun setVisualizerMode(mode: String) {
+        context.streamSettingsDataStore.edit { prefs ->
+            prefs[visualizerModeKey] = mode
         }
     }
 }

@@ -23,6 +23,8 @@ class PcmAnalysisAudioProcessor : BaseAudioProcessor() {
     private var sampleRate = 44100
     private var channelCount = 2
 
+    var onFrameListener: ((timestampUs: Long, bands: FloatArray, wave: FloatArray) -> Unit)? = null
+
     private val fftSize = 2048
     private val hannWindow = FloatArray(fftSize) { i ->
         (0.5 * (1.0 - cos(2.0 * Math.PI * i / fftSize))).toFloat()
@@ -30,7 +32,7 @@ class PcmAnalysisAudioProcessor : BaseAudioProcessor() {
     private val fftReal = FloatArray(fftSize)
     private val fftImag = FloatArray(fftSize)
     private val pcmAccumulator = FloatArray(fftSize)
-    private var accumPos = 0
+    var accumPos = 0
 
     private val bandCount = 32
     private val logBands = FloatArray(bandCount)
@@ -162,7 +164,12 @@ class PcmAnalysisAudioProcessor : BaseAudioProcessor() {
         }
 
         val presentationTimeMs = (totalSamplesProcessed * 1000L) / sampleRate
-        ringBuffer.add(AnalysisFrame(presentationTimeMs, logBands.copyOf(), wave256.copyOf()))
+        val presentationTimeUs = presentationTimeMs * 1000L
+        val bandsCopy = logBands.copyOf()
+        val waveCopy = wave256.copyOf()
+        ringBuffer.add(AnalysisFrame(presentationTimeMs, bandsCopy, waveCopy))
+
+        onFrameListener?.invoke(presentationTimeUs, bandsCopy, waveCopy)
 
         while (ringBuffer.size > 100) {
             ringBuffer.poll()

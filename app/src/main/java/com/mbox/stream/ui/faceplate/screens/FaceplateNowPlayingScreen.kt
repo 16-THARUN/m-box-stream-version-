@@ -1,5 +1,6 @@
 package com.mbox.stream.ui.faceplate.screens
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,8 +33,9 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.mediaplayer.data.model.NowPlayingState
 import com.mediaplayer.data.model.toTimeString
-import com.mediaplayer.ui.components.NowPlayingArtwork
 import com.mediaplayer.ui.components.PillSeekBar
+import com.mediaplayer.ui.components.VinylStage
+import com.mediaplayer.util.DeviceState
 import com.mbox.stream.player.StreamPlayerController
 import com.mbox.stream.ui.faceplate.components.FaceplateQueueSheet
 import com.mbox.stream.ui.faceplate.components.SegmentedControl
@@ -59,6 +62,26 @@ fun FaceplateNowPlayingScreen(
     var showQueueSheet by remember { mutableStateOf(false) }
     var isLiked by rememberSaveable { mutableStateOf(false) }
 
+    LaunchedEffect(stageMode) {
+        if (stageMode == StageDisplayMode.VISUAL) {
+            playerController.visualizerEngine.subscribeUI()
+            Log.i("MBoxVis", "VISUAL mode entered")
+            Log.i("MBoxVis", "Selected style id: $selectedVisualizerId")
+        } else {
+            playerController.visualizerEngine.unsubscribeUI()
+            Log.i("MBoxVis", "VISUAL mode left")
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            if (stageMode == StageDisplayMode.VISUAL) {
+                playerController.visualizerEngine.unsubscribeUI()
+                Log.i("MBoxVis", "VISUAL mode left (Disposed)")
+            }
+        }
+    }
+
     if (showSignalPathSheet) {
         FaceplateSignalPathSheet(
             nowPlayingState = nowPlayingState,
@@ -71,6 +94,7 @@ fun FaceplateNowPlayingScreen(
             selectedModeId = selectedVisualizerId,
             onModeSelected = {
                 selectedVisualizerId = it
+                Log.i("MBoxVis", "Style chosen: $it")
                 playerController.setVisualizerMode(it)
             },
             onDismiss = { showVisualizerPicker = false }
@@ -114,7 +138,7 @@ fun FaceplateNowPlayingScreen(
             .padding(top = 12.dp, bottom = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Bar (B-008, B-010)
+        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -160,18 +184,22 @@ fun FaceplateNowPlayingScreen(
             }
         }
 
-        // Segmented Control over Stage (B-007, B-013)
+        // Segmented Control over Stage
         SegmentedControl(
             selectedMode = stageMode,
             onModeSelected = { stageMode = it },
-            onLongClickVisual = { showVisualizerPicker = true },
+            onLongClickVisual = {
+                Log.i("MBoxVis", "Long-press on VISUAL received")
+                Log.i("MBoxVis", "Picker opened")
+                showVisualizerPicker = true
+            },
             modifier = Modifier
                 .fillMaxWidth(0.85f)
                 .padding(bottom = 12.dp)
                 .zIndex(10f)
         )
 
-        // Stage Area Box (B-013: Strictly constrained, never overlaps controls or title)
+        // Stage Area Box
         BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
@@ -181,12 +209,18 @@ fun FaceplateNowPlayingScreen(
         ) {
             val maxStageWidth = maxWidth * 0.85f
             val stageDim = min(maxStageWidth, maxHeight)
+            val density = LocalDensity.current
+            val stageDimPx = with(density) { stageDim.toPx() }
 
             when (stageMode) {
                 StageDisplayMode.RECORD, StageDisplayMode.VISUAL -> {
-                    NowPlayingArtwork(
-                        imageUri = track.albumArtUri,
+                    VinylStage(
+                        activeVisualizerMode = if (stageMode == StageDisplayMode.VISUAL) selectedVisualizerId else "off",
+                        fftFlow = playerController.visualizerEngine.bandsFlow,
+                        accentColor = colors.accent,
+                        deviceState = DeviceState.OPTIMAL,
                         isPlaying = nowPlayingState.isPlaying,
+                        imageUri = track.albumArtUri,
                         playerState = if (stageMode == StageDisplayMode.VISUAL) {
                             nowPlayingState.copy(activeVisualizerMode = selectedVisualizerId)
                         } else {
@@ -194,6 +228,12 @@ fun FaceplateNowPlayingScreen(
                         },
                         onSeekTo = { playerController.seekTo(it) },
                         playerVm = playerController,
+                        showLyrics = false,
+                        vinylDiameterPx = stageDimPx * 0.85f,
+                        stageSizePx = stageDimPx,
+                        onStagePositioned = { center, radius ->
+                            Log.i("MBoxVis", "Frames drawn: VinylStage center=$center, radius=$radius")
+                        },
                         modifier = Modifier.size(stageDim)
                     )
                 }
@@ -205,7 +245,7 @@ fun FaceplateNowPlayingScreen(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(stageDim)
                     ) {
-                        // Record sliding out from behind cover (B-010)
+                        // Record sliding out from behind cover
                         Surface(
                             shape = CircleShape,
                             color = Color(0xFF111111),
@@ -264,7 +304,7 @@ fun FaceplateNowPlayingScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Title and Time in Mono (B-010)
+        // Title and Time in Mono
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -300,7 +340,7 @@ fun FaceplateNowPlayingScreen(
             }
         }
 
-        // Artist on its own line (B-010)
+        // Artist on its own line
         Text(
             text = track.artist,
             fontSize = 14.sp,
@@ -313,7 +353,7 @@ fun FaceplateNowPlayingScreen(
                 .padding(top = 2.dp, bottom = 12.dp)
         )
 
-        // Seek Bar (B-010)
+        // Seek Bar
         PillSeekBar(
             currentPositionMs = nowPlayingState.positionMs,
             totalDurationMs = nowPlayingState.durationMs,
@@ -324,7 +364,7 @@ fun FaceplateNowPlayingScreen(
                 .padding(bottom = 12.dp)
         )
 
-        // Signal Card (B-009, B-010)
+        // Signal Card
         SignalCard(
             nowPlayingState = nowPlayingState,
             onOpenSignalPath = { showSignalPathSheet = true },

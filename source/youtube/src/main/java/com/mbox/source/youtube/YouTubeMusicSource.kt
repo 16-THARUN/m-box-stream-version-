@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.localization.Localization
+import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamInfo
@@ -91,6 +92,57 @@ class YouTubeMusicSource @Inject constructor() : MusicSource {
             }
         Log.i(TAG, "search() returned ${results.size} tracks")
         results
+    }
+
+    suspend fun fetchRadioMix(seedTrackId: String): List<SourceTrack> = withContext(Dispatchers.IO) {
+        ensureInitialized()
+        val videoId = seedTrackId.removePrefix("https://www.youtube.com/watch?v=")
+        Log.i(TAG, "radio fetch start seed=$videoId source=mix")
+        try {
+            val service = ServiceList.YouTube
+            val playlistUrl = "https://www.youtube.com/watch?v=$videoId&list=RDAMVM$videoId"
+            val playlistInfo = PlaylistInfo.getInfo(service, playlistUrl)
+            val items = playlistInfo.relatedItems
+                .filterIsInstance<StreamInfoItem>()
+                .map { item ->
+                    val rawArt = item.thumbnails?.sortedByDescending { it.width }?.firstOrNull()?.url
+                    SourceTrack(
+                        id = item.url ?: "",
+                        title = item.name ?: "Unknown Title",
+                        artist = item.uploaderName ?: "Unknown Artist",
+                        album = "YouTube Music",
+                        durationMs = if (item.duration > 0) item.duration * 1000L else 0L,
+                        artworkUrl = getHighResArtworkUrl(rawArt) ?: rawArt,
+                        sourceId = id
+                    )
+                }
+            Log.i(TAG, "radio items added=${items.size} waiting=${items.size}")
+            items
+        } catch (e: Exception) {
+            Log.w(TAG, "Radio mix fetch failed: ${e.message}, trying related fallback")
+            try {
+                val streamInfo = StreamInfo.getInfo(ServiceList.YouTube, "https://www.youtube.com/watch?v=$videoId")
+                val related = streamInfo.relatedItems
+                    .filterIsInstance<StreamInfoItem>()
+                    .map { item ->
+                        val rawArt = item.thumbnails?.sortedByDescending { it.width }?.firstOrNull()?.url
+                        SourceTrack(
+                            id = item.url ?: "",
+                            title = item.name ?: "Unknown Title",
+                            artist = item.uploaderName ?: "Unknown Artist",
+                            album = "YouTube Music",
+                            durationMs = if (item.duration > 0) item.duration * 1000L else 0L,
+                            artworkUrl = getHighResArtworkUrl(rawArt) ?: rawArt,
+                            sourceId = id
+                        )
+                    }
+                Log.i(TAG, "radio items added=${related.size} waiting=${related.size} (related fallback)")
+                related
+            } catch (err: Exception) {
+                Log.e(TAG, "radio error ${err.message}", err)
+                emptyList()
+            }
+        }
     }
 
     override suspend fun resolve(track: SourceTrack): ResolvedStream = withContext(Dispatchers.IO) {

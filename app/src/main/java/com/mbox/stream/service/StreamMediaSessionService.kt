@@ -96,6 +96,18 @@ class StreamMediaSessionService : MediaSessionService() {
         val exo = engineResult.player
         player = exo
 
+        exo.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) {
+                    val sid = exo.audioSessionId
+                    if (sid > 0) {
+                        Log.i("MBoxVis", "visualizer start sid=$sid ok=true")
+                        visualizerManager.start(sid)
+                    }
+                }
+            }
+        })
+
         // Attach AnalyticsListener to capture real audio decoder, format, and track config
         exo.addAnalyticsListener(object : AnalyticsListener {
             override fun onAudioDecoderInitialized(
@@ -212,6 +224,7 @@ class StreamMediaSessionService : MediaSessionService() {
         val p = player
         if (p == null || !p.playWhenReady || p.playbackState == Player.STATE_IDLE || p.playbackState == Player.STATE_ENDED) {
             Log.i(TAG, "Task removed and player idle -> stopping StreamMediaSessionService")
+            visualizerManager.stop()
             stopSelf()
         }
     }
@@ -219,6 +232,7 @@ class StreamMediaSessionService : MediaSessionService() {
     override fun onDestroy() {
         Log.i(TAG, "StreamMediaSessionService onDestroy()")
         serviceScope.cancel()
+        visualizerManager.stop()
         mediaSession?.run {
             player.release()
             release()

@@ -1,6 +1,8 @@
 package com.mbox.stream.ui.faceplate.screens
 
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +22,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.mediaplayer.data.model.NowPlayingState
@@ -54,6 +58,7 @@ fun FaceplateNowPlayingScreen(
 ) {
     val track = nowPlayingState.currentTrack ?: return
     val colors = FaceplateThemeColors
+    val context = LocalContext.current
 
     var stageMode by rememberSaveable { mutableStateOf(StageDisplayMode.RECORD) }
     var selectedVisualizerId by rememberSaveable { mutableStateOf("circular_rings") }
@@ -62,8 +67,27 @@ fun FaceplateNowPlayingScreen(
     var showQueueSheet by remember { mutableStateOf(false) }
     var isLiked by rememberSaveable { mutableStateOf(false) }
 
+    var hasRecordAudioPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.RECORD_AUDIO
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var showAudioPermissionDialog by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasRecordAudioPermission = isGranted
+    }
+
     LaunchedEffect(stageMode) {
         if (stageMode == StageDisplayMode.VISUAL) {
+            if (!hasRecordAudioPermission) {
+                showAudioPermissionDialog = true
+            }
             playerController.visualizerEngine.subscribeUI()
             Log.i("MBoxVis", "VISUAL mode entered")
             Log.i("MBoxVis", "Selected style id: $selectedVisualizerId")
@@ -80,6 +104,48 @@ fun FaceplateNowPlayingScreen(
                 Log.i("MBoxVis", "VISUAL mode left (Disposed)")
             }
         }
+    }
+
+    if (showAudioPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showAudioPermissionDialog = false },
+            title = {
+                Text(
+                    "AUDIO ACCESS NEEDED",
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            },
+            text = {
+                Text(
+                    "To animate the visualizer, Android needs the 'record audio' permission to read the music's levels. m-Box never records your microphone.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.textSub
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showAudioPermissionDialog = false
+                        permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.accent),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("GRANT ACCESS", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = colors.inkOnAccent)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAudioPermissionDialog = false }) {
+                    Text("NOT NOW", fontFamily = FontFamily.Monospace, color = colors.text)
+                }
+            },
+            containerColor = colors.surface,
+            titleContentColor = colors.text,
+            textContentColor = colors.textSub,
+            shape = RoundedCornerShape(12.dp)
+        )
     }
 
     if (showSignalPathSheet) {
@@ -214,28 +280,51 @@ fun FaceplateNowPlayingScreen(
 
             when (stageMode) {
                 StageDisplayMode.RECORD, StageDisplayMode.VISUAL -> {
-                    VinylStage(
-                        activeVisualizerMode = if (stageMode == StageDisplayMode.VISUAL) selectedVisualizerId else "off",
-                        fftFlow = playerController.visualizerEngine.bandsFlow,
-                        accentColor = colors.accent,
-                        deviceState = DeviceState.OPTIMAL,
-                        isPlaying = nowPlayingState.isPlaying,
-                        imageUri = track.albumArtUri,
-                        playerState = if (stageMode == StageDisplayMode.VISUAL) {
-                            nowPlayingState.copy(activeVisualizerMode = selectedVisualizerId)
-                        } else {
-                            nowPlayingState.copy(activeVisualizerMode = "off")
-                        },
-                        onSeekTo = { playerController.seekTo(it) },
-                        playerVm = playerController,
-                        showLyrics = false,
-                        vinylDiameterPx = stageDimPx * 0.85f,
-                        stageSizePx = stageDimPx,
-                        onStagePositioned = { center, radius ->
-                            Log.i("MBoxVis", "Frames drawn: VinylStage center=$center, radius=$radius")
-                        },
-                        modifier = Modifier.size(stageDim)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        VinylStage(
+                            activeVisualizerMode = if (stageMode == StageDisplayMode.VISUAL) selectedVisualizerId else "off",
+                            fftFlow = playerController.visualizerEngine.bandsFlow,
+                            accentColor = colors.accent,
+                            deviceState = DeviceState.OPTIMAL,
+                            isPlaying = nowPlayingState.isPlaying,
+                            imageUri = track.albumArtUri,
+                            playerState = if (stageMode == StageDisplayMode.VISUAL) {
+                                nowPlayingState.copy(activeVisualizerMode = selectedVisualizerId)
+                            } else {
+                                nowPlayingState.copy(activeVisualizerMode = "off")
+                            },
+                            onSeekTo = { playerController.seekTo(it) },
+                            playerVm = playerController,
+                            showLyrics = false,
+                            vinylDiameterPx = stageDimPx * 0.85f,
+                            stageSizePx = stageDimPx,
+                            onStagePositioned = { center, radius ->
+                                Log.i("MBoxVis", "Frames drawn: VinylStage center=$center, radius=$radius")
+                            },
+                            modifier = Modifier.size(stageDim)
+                        )
+
+                        if (stageMode == StageDisplayMode.VISUAL && !hasRecordAudioPermission) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = colors.surface.copy(alpha = 0.9f),
+                                border = BorderStroke(1.dp, colors.accent),
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .clickable { showAudioPermissionDialog = true }
+                            ) {
+                                Text(
+                                    text = "ALLOW AUDIO ACCESS TO ANIMATE",
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.accent,
+                                    letterSpacing = 0.1.sp,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
                 }
                 StageDisplayMode.COVER -> {
                     val slideOffset = (progress.coerceIn(0f, 1f) * (stageDim.value * 0.25f)).dp

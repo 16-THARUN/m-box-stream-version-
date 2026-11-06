@@ -1,10 +1,11 @@
 package com.mbox.stream.ui.search
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mediaplayer.data.model.MusicSource
 import com.mediaplayer.data.model.SourceTrack
-import com.mbox.stream.data.AddOnRepository
+import com.mbox.stream.data.StreamSettingsRepository
 import com.mbox.stream.player.StreamPlayerController
 import com.mbox.stream.queue.QueueManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,16 +28,18 @@ sealed interface SearchUiState {
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val musicSources: Set<@JvmSuppressWildcards MusicSource>,
-    private val addOnRepository: AddOnRepository,
+    private val streamSettingsRepository: StreamSettingsRepository,
     val playerController: StreamPlayerController,
     val queueManager: QueueManager
 ) : ViewModel() {
 
-    val isYouTubeEnabled = addOnRepository.isYouTubeEnabled.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = false
-    )
+    val isYouTubeEnabled = streamSettingsRepository.isYouTubeEnabled
+        .onEach { Log.i("MBoxStream", "youtubeMusicEnabled=$it") }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Initial)
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()

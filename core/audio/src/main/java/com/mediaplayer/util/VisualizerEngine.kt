@@ -8,7 +8,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.*
@@ -30,6 +32,28 @@ class VisualizerEngine(
     }
 
     private var exoPlayer: ExoPlayer? = null
+    private val pcmFrameCounter = AtomicInteger(0)
+    private val timerExecutor = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r, "MBox-VisualizerTimer").apply { priority = Thread.MIN_PRIORITY }
+    }
+
+    init {
+        Log.i(TAG, "VisualizerEngine created")
+        pcmProcessor.onFrameListener = { tsUs, bands, wave ->
+            pcmFrameCounter.incrementAndGet()
+            onPcmFrameProcessed(tsUs, bands, wave)
+        }
+
+        // Timer-based logger every 5 seconds regardless of PCM arrival
+        timerExecutor.scheduleAtFixedRate({
+            val count = pcmFrameCounter.getAndSet(0)
+            val fps = count / 5
+            val peak = getPeakBass()
+            val subs = subscriberCount.get()
+            val procActive = pcmProcessor.isActive
+            Log.i(TAG, "engine fps=$fps peakBass=${String.format(Locale.US, "%.3f", peak)} subscribers=$subs procActive=$procActive")
+        }, 5, 5, TimeUnit.SECONDS)
+    }
 
     fun setPlayer(player: ExoPlayer) {
         this.exoPlayer = player
@@ -80,17 +104,19 @@ class VisualizerEngine(
     val bandsFlow: StateFlow<FloatArray> = _bandsFlow.asStateFlow()
 
     fun subscribeUI() {
-        if (subscriberCount.incrementAndGet() > 0) {
-            isUiSubscribed.set(true)
-            Log.i(TAG, "UI Subscribed to VisualizerEngine")
-        }
+        val newCount = subscriberCount.incrementAndGet()
+        isUiSubscribed.set(true)
+        Log.i(TAG, "UI subscriber attached / detached: $newCount")
     }
 
     fun unsubscribeUI() {
-        if (subscriberCount.decrementAndGet() <= 0) {
+        val newCount = subscriberCount.decrementAndGet()
+        if (newCount <= 0) {
             subscriberCount.set(0)
             isUiSubscribed.set(false)
-            Log.i(TAG, "UI Unsubscribed from VisualizerEngine (Skipping FFT, CPU saved ~90%)")
+            Log.i(TAG, "UI subscriber attached / detached: 0 (Skipping FFT, CPU saved ~90%)")
+        } else {
+            Log.i(TAG, "UI subscriber attached / detached: $newCount")
         }
     }
 
@@ -160,8 +186,8 @@ class VisualizerEngine(
             historyHead = (historyHead + 1) % HISTORY_CAPACITY
             if (historySize < HISTORY_CAPACITY) historySize++
 
-            // Update StateFlow for UI
-            _bandsFlow.value = frame.bands
+            // Emit a new FloatArray copy so Compose StateFlow triggers on every frame
+            _bandsFlow.value = frame.bands.copyOf()
         }
     }
 
@@ -248,6 +274,7 @@ class VisualizerEngine(
 
     fun release() {
         stopSystemVisualizerFallback()
+        timerExecutor.shutdown()
         executor.shutdown()
     }
 }

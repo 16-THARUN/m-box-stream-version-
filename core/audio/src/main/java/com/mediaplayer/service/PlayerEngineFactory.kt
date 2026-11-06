@@ -23,7 +23,6 @@ import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.mediaplayer.util.DolbyCapabilityDetector
-import com.mediaplayer.util.PcmAnalysisAudioProcessor
 import com.mediaplayer.util.VisualizerManager
 
 data class PlayerEngineResult(
@@ -39,7 +38,6 @@ object PlayerEngineFactory {
         context: Context,
         eqManager: EqualizerManager,
         visualizerManager: VisualizerManager,
-        pcmAnalysisProcessor: PcmAnalysisAudioProcessor = visualizerManager.pcmAnalysisProcessor,
         onDecoderInitialized: (String) -> Unit = {},
         onAudioError: (String) -> Unit = {}
     ): PlayerEngineResult {
@@ -50,7 +48,7 @@ object PlayerEngineFactory {
 
         // 1. Setup the Hardware-Aware AudioSink
         val audioSink = DefaultAudioSink.Builder(context)
-            .setAudioProcessors(arrayOf(biquadEqProcessor, pcmAnalysisProcessor))
+            .setAudioProcessors(arrayOf(biquadEqProcessor, visualizerManager.pcmAnalysisProcessor))
             .build()
 
         // 2. Force MediaCodec over FFmpeg for Bitstream Passthrough

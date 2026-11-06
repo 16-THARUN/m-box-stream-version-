@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.Properties
 
 plugins {
@@ -27,6 +30,12 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+
+        val buildTimeStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+        val gitHashStr = "f16952b"
+
+        buildConfigField("String", "BUILD_TIME", "\"$buildTimeStr\"")
+        buildConfigField("String", "GIT_HASH", "\"$gitHashStr\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

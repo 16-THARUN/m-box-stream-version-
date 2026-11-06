@@ -88,11 +88,9 @@ fun FaceplateNowPlayingScreen(
             if (!hasRecordAudioPermission) {
                 showAudioPermissionDialog = true
             }
-            playerController.visualizerEngine.subscribeUI()
             Log.i("MBoxVis", "VISUAL mode entered")
             Log.i("MBoxVis", "Selected style id: $selectedVisualizerId")
         } else {
-            playerController.visualizerEngine.unsubscribeUI()
             Log.i("MBoxVis", "VISUAL mode left")
         }
     }
@@ -100,7 +98,6 @@ fun FaceplateNowPlayingScreen(
     DisposableEffect(Unit) {
         onDispose {
             if (stageMode == StageDisplayMode.VISUAL) {
-                playerController.visualizerEngine.unsubscribeUI()
                 Log.i("MBoxVis", "VISUAL mode left (Disposed)")
             }
         }
@@ -283,7 +280,7 @@ fun FaceplateNowPlayingScreen(
                     Box(contentAlignment = Alignment.Center) {
                         VinylStage(
                             activeVisualizerMode = if (stageMode == StageDisplayMode.VISUAL) selectedVisualizerId else "off",
-                            fftFlow = playerController.visualizerEngine.bandsFlow,
+                            fftFlow = playerController.visualizerManager.fftFlow,
                             accentColor = colors.accent,
                             deviceState = DeviceState.OPTIMAL,
                             isPlaying = nowPlayingState.isPlaying,

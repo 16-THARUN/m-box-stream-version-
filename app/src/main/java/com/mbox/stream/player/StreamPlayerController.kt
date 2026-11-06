@@ -14,6 +14,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 import com.mediaplayer.data.model.*
+import com.mediaplayer.util.VisualizerManager
 import com.mbox.stream.queue.QueueManager
 import com.mbox.stream.service.StreamMediaSessionService
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,7 +29,8 @@ import javax.inject.Singleton
 @OptIn(UnstableApi::class)
 class StreamPlayerController @Inject constructor(
     @ApplicationContext private val context: Context,
-    val queueManager: QueueManager
+    val queueManager: QueueManager,
+    val visualizerManager: VisualizerManager
 ) : PlayerController, CastController {
 
     companion object {
@@ -37,7 +39,7 @@ class StreamPlayerController @Inject constructor(
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-    val visualizerEngine = com.mediaplayer.util.VisualizerEngine()
+    val fftFlow = visualizerManager.fftFlow
 
     private var mediaController: MediaController? = null
 

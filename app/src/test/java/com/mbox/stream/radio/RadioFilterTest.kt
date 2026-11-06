@@ -25,8 +25,9 @@ class RadioFilterTest {
             SourceTrack("5", "New Track", "Artist", "Album", 180_000L, null, "youtube")
         )
 
-        val history = listOf("2") // Despacito was played
-        val filtered = RadioFilter.filterCandidateTracks(candidates, history, emptyList())
+        val historyIds = listOf("2")
+        val historyTitles = listOf("Despacito")
+        val filtered = RadioFilter.filterCandidateTracks(candidates, historyIds, emptyList(), historyTitles)
 
         // Track 1: skipped (too short)
         // Track 2: skipped (in history)

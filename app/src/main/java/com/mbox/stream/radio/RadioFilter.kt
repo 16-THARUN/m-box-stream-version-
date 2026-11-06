@@ -13,17 +13,19 @@ object RadioFilter {
     fun filterCandidateTracks(
         candidates: List<SourceTrack>,
         historyTrackIds: List<String>,
-        existingQueueTracks: List<SourceTrack>
+        existingQueueTracks: List<SourceTrack>,
+        historyTrackTitles: List<String> = emptyList()
     ): List<SourceTrack> {
         val recentHistorySet = historyTrackIds.takeLast(50).toSet()
+        val recentHistoryTitlesSet = historyTrackTitles.map { cleanTitle(it) }.toSet()
         val filtered = mutableListOf<SourceTrack>()
 
         for (track in candidates) {
             val trackId = track.id
             val clean = cleanTitle(track.title)
 
-            // 1. Skip if played in last 50 tracks
-            if (recentHistorySet.contains(trackId)) {
+            // 1. Skip if played in last 50 tracks (by ID or clean title)
+            if (recentHistorySet.contains(trackId) || recentHistoryTitlesSet.contains(clean)) {
                 continue
             }
 

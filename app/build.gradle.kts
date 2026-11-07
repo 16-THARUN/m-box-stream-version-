@@ -71,6 +71,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:audio"))
@@ -81,6 +85,10 @@ dependencies {
 
     implementation(libs.newpipe.extractor)
     implementation("com.google.code.gson:gson:2.10.1")
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

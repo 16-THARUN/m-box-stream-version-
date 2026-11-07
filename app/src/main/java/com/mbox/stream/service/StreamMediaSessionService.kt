@@ -47,13 +47,15 @@ class StreamMediaSessionService : MediaSessionService() {
     @Inject
     lateinit var youtubeMusicSource: YouTubeMusicSource
 
+    @Inject
+    lateinit var visualizerManager: VisualizerManager
+
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
 
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     val eqManager = EqualizerManager()
-    val visualizerManager = VisualizerManager()
 
     override fun onCreate() {
         super.onCreate()
@@ -100,10 +102,7 @@ class StreamMediaSessionService : MediaSessionService() {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
                     val sid = exo.audioSessionId
-                    if (sid > 0) {
-                        Log.i("MBoxVis", "visualizer start sid=$sid ok=true")
-                        visualizerManager.start(sid)
-                    }
+                    startVisualizerSafely(sid)
                 }
             }
         })
@@ -214,6 +213,27 @@ class StreamMediaSessionService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, exo)
             .setCallback(sessionCallback)
             .build()
+    }
+
+    private fun startVisualizerSafely(sid: Int) {
+        if (sid <= 0) return
+        try {
+            visualizerManager.start(sid)
+            Log.i("MBoxVis", "visualizer start sid=$sid ok=true")
+        } catch (e: Exception) {
+            Log.e("MBoxVis", "visualizer start sid=$sid ok=false reason=${e.message}", e)
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == "RESTART_VISUALIZER") {
+            val sid = player?.audioSessionId ?: 0
+            if (sid > 0) {
+                Log.i("MBoxVis", "RESTART_VISUALIZER action received. Starting visualizer for sid=$sid")
+                startVisualizerSafely(sid)
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {

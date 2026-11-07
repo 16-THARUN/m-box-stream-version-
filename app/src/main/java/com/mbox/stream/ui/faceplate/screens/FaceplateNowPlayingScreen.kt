@@ -47,6 +47,8 @@ import com.mbox.stream.ui.faceplate.components.SignalCard
 import com.mbox.stream.ui.faceplate.components.StageDisplayMode
 import com.mbox.stream.ui.faceplate.components.VisualizerPickerSheet
 import com.mbox.stream.ui.faceplate.theme.FaceplateThemeColors
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -81,6 +83,14 @@ fun FaceplateNowPlayingScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasRecordAudioPermission = isGranted
+        if (isGranted) {
+            try {
+                val intent = android.content.Intent(context, com.mbox.stream.service.StreamMediaSessionService::class.java).apply {
+                    action = "RESTART_VISUALIZER"
+                }
+                context.startService(intent)
+            } catch (_: Exception) {}
+        }
     }
 
     LaunchedEffect(stageMode) {
@@ -90,6 +100,14 @@ fun FaceplateNowPlayingScreen(
             }
             Log.i("MBoxVis", "VISUAL mode entered")
             Log.i("MBoxVis", "Selected style id: $selectedVisualizerId")
+
+            while (isActive) {
+                delay(1000)
+                val bands = playerController.visualizerManager.fftFlow.value
+                val maxVal = if (bands.isNotEmpty()) bands.maxOrNull() ?: 0f else 0f
+                val meanVal = if (bands.isNotEmpty()) bands.average().toFloat() else 0f
+                Log.i("MBoxVis", "updates/s=10, max band=${String.format(java.util.Locale.US, "%.3f", maxVal)}, mean band=${String.format(java.util.Locale.US, "%.3f", meanVal)}")
+            }
         } else {
             Log.i("MBoxVis", "VISUAL mode left")
         }

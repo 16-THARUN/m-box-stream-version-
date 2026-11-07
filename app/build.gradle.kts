@@ -32,7 +32,14 @@ android {
         versionName = "1.0"
 
         val buildTimeStr = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-        val gitHashStr = "f16952b"
+        val gitHashStr = try {
+            providers.exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                workingDir = rootProject.projectDir
+            }.standardOutput.asText.get().trim().ifBlank { "nogit" }
+        } catch (_: Exception) {
+            "nogit"
+        }
 
         buildConfigField("String", "BUILD_TIME", "\"$buildTimeStr\"")
         buildConfigField("String", "GIT_HASH", "\"$gitHashStr\"")

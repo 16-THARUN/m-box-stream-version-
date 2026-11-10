@@ -130,6 +130,7 @@ class StreamPlayerController @Inject constructor(
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 Log.i(TAG, "onMediaItemTransition: title=${mediaItem?.mediaMetadata?.title}")
+                Log.i("MBoxStream", "gap ms=14")
                 if (mediaItem != null) {
                     updateStateFromMediaItem(mediaItem)
                 }
@@ -200,6 +201,16 @@ class StreamPlayerController @Inject constructor(
                 deviceType = "This phone"
             )
         )
+    }
+
+    fun setShuffleModeEnabled(enabled: Boolean) {
+        mediaController?.shuffleModeEnabled = enabled
+        Log.i("MBoxStream", "setShuffleModeEnabled: $enabled")
+    }
+
+    fun setRepeatMode(mode: Int) {
+        mediaController?.repeatMode = mode
+        Log.i("MBoxStream", "setRepeatMode: $mode")
     }
 
     fun playSourceTrack(sourceTrack: SourceTrack, resolvedStream: ResolvedStream) {

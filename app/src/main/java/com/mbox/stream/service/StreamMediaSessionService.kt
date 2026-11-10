@@ -14,8 +14,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
+import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
+import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -33,6 +37,7 @@ import com.mediaplayer.util.VisualizerManager
 import com.mbox.source.youtube.YouTubeMusicSource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
@@ -109,8 +114,26 @@ class StreamMediaSessionService : MediaSessionService() {
             }
         })
 
+        // Media3 SimpleCache setup for streaming audio cache (B-028)
+        val mediaCacheDir = File(cacheDir, "media_cache").apply { if (!exists()) mkdirs() }
+        val evictor = LeastRecentlyUsedCacheEvictor(512L * 1024L * 1024L)
+        val databaseProvider = StandaloneDatabaseProvider(this)
+        val simpleCache = SimpleCache(mediaCacheDir, evictor, databaseProvider)
+
+        val cacheDataSourceFactory = CacheDataSource.Factory()
+            .setCache(simpleCache)
+            .setUpstreamDataSourceFactory(resolvingDataSourceFactory)
+            .setCacheKeyFactory { dataSpec ->
+                val uriStr = dataSpec.uri.toString()
+                if (uriStr.startsWith("mbox://yt/")) {
+                    "yt:${uriStr.removePrefix("mbox://yt/")}:251"
+                } else {
+                    dataSpec.key ?: uriStr
+                }
+            }
+
         val mediaSourceFactory = DefaultMediaSourceFactory(this)
-            .setDataSourceFactory(resolvingDataSourceFactory)
+            .setDataSourceFactory(cacheDataSourceFactory)
 
         val engineResult: PlayerEngineResult = PlayerEngineFactory.createExoPlayer(
             context = this,

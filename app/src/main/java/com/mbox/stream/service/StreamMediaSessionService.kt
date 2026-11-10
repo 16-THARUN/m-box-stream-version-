@@ -107,8 +107,16 @@ class StreamMediaSessionService : MediaSessionService() {
             }
         })
 
-        // Attach AnalyticsListener to capture real audio decoder, format, and track config
+        // Attach AnalyticsListener to capture real audio decoder, format, audioSessionId, and track config
         exo.addAnalyticsListener(object : AnalyticsListener {
+            override fun onAudioSessionIdChanged(
+                eventTime: AnalyticsListener.EventTime,
+                audioSessionId: Int
+            ) {
+                Log.i("MBoxVis", "onAudioSessionIdChanged sid=$audioSessionId")
+                startVisualizerSafely(audioSessionId)
+            }
+
             override fun onAudioDecoderInitialized(
                 eventTime: AnalyticsListener.EventTime,
                 decoderName: String,

@@ -19,7 +19,7 @@ import com.mbox.stream.ui.faceplate.theme.FaceplateThemeColors
 data class VisualizerModeOption(val id: String, val name: String)
 
 val visualizerModeOptions = listOf(
-    VisualizerModeOption("circular_rings", "CIRCULAR RINGS"),
+    VisualizerModeOption("circular_rings", "CIRCULAR SPECTRUM"),
     VisualizerModeOption("orbiting_stardust", "ORBITING STARDUST"),
     VisualizerModeOption("acoustic_ripples", "ACOUSTIC RIPPLES"),
     VisualizerModeOption("groove_bleed", "GROOVE BLEED"),

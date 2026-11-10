@@ -1,7 +1,6 @@
 package com.mbox.stream.ui.faceplate.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +35,7 @@ fun FaceplateMiniPlayer(
 ) {
     val track = nowPlayingState.currentTrack ?: return
     val colors = FaceplateThemeColors
+    val isReconnecting = nowPlayingState.currentAudioSpec.contains("RECONNECTING", ignoreCase = true)
 
     Surface(
         shape = RoundedCornerShape(10.dp),
@@ -87,7 +86,7 @@ fun FaceplateMiniPlayer(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${track.artist.uppercase()} · ${nowPlayingState.currentAudioSpec.uppercase()}",
+                    text = if (isReconnecting) "RECONNECTING…" else "${track.artist.uppercase()} · ${nowPlayingState.currentAudioSpec.uppercase()}",
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
                     color = colors.accent,

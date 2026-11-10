@@ -15,6 +15,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -32,6 +33,7 @@ import com.mediaplayer.util.VisualizerManager
 import com.mbox.source.youtube.YouTubeMusicSource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -54,6 +56,7 @@ class StreamMediaSessionService : MediaSessionService() {
     private var player: ExoPlayer? = null
 
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val linkCache = ConcurrentHashMap<String, Pair<String, Long>>()
 
     val eqManager = EqualizerManager()
 
@@ -80,8 +83,34 @@ class StreamMediaSessionService : MediaSessionService() {
             .setUserAgent(USER_AGENT)
             .setAllowCrossProtocolRedirects(true)
 
+        val resolvingDataSourceFactory = ResolvingDataSource.Factory(httpDataSourceFactory, object : ResolvingDataSource.Resolver {
+            override fun resolveDataSpec(dataSpec: androidx.media3.datasource.DataSpec): androidx.media3.datasource.DataSpec {
+                val uriStr = dataSpec.uri.toString()
+                if (uriStr.startsWith("mbox://yt/")) {
+                    val videoId = uriStr.removePrefix("mbox://yt/")
+                    val now = System.currentTimeMillis()
+                    val cached = linkCache[videoId]
+
+                    if (cached != null && now < cached.second - 60000L) {
+                        Log.i("MBoxStream", "link reused for videoId=$videoId")
+                        return dataSpec.buildUpon().setUri(Uri.parse(cached.first)).build()
+                    }
+
+                    Log.i("MBoxStream", "resolve start videoId=$videoId")
+                    val resolved = runBlocking {
+                        youtubeMusicSource.resolve(SourceTrack(id = videoId, title = "Stream", artist = "YouTube", durationMs = 0L, artworkUrl = null, sourceId = "youtube"))
+                    }
+                    linkCache[videoId] = Pair(resolved.url, resolved.expiresAtMs ?: (System.currentTimeMillis() + 14400000L))
+                    Log.i("MBoxStream", "resolve end videoId=$videoId codec=${resolved.codec}")
+
+                    return dataSpec.buildUpon().setUri(Uri.parse(resolved.url)).build()
+                }
+                return dataSpec
+            }
+        })
+
         val mediaSourceFactory = DefaultMediaSourceFactory(this)
-            .setDataSourceFactory(httpDataSourceFactory)
+            .setDataSourceFactory(resolvingDataSourceFactory)
 
         val engineResult: PlayerEngineResult = PlayerEngineFactory.createExoPlayer(
             context = this,

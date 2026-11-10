@@ -75,14 +75,14 @@ fun FaceplateSignalPathSheet(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Timeline Steps with Right-Aligned Status (B-011)
+            // Timeline Steps
             val steps = listOf(
-                Triple("SOURCE", signal?.format ?: "OPUS · 160 KBPS · 48 KHZ", "VERIFIED"),
-                Triple("DECODER", signal?.decoder ?: "c2.android.opus.decoder", "VERIFIED"),
+                Triple("SOURCE", signal?.format ?: "—", "OK"),
+                Triple("DECODER", signal?.decoder ?: "—", "OK"),
                 Triple("RESAMPLER", "NOT USED", "BYPASSED"),
                 Triple("PROCESSING", "EQ OFF", "BYPASSED"),
                 Triple("VOLUME", "100%", "PASSTHROUGH"),
-                Triple("OUTPUT", nowPlayingState.activeOutputDevice.uppercase() + " (AUDIOTRACK)", "VERIFIED")
+                Triple("OUTPUT", nowPlayingState.activeOutputDevice.uppercase() + " (AUDIOTRACK)", "OK")
             )
 
             steps.forEachIndexed { index, (label, valText, status) ->
@@ -135,7 +135,7 @@ fun FaceplateSignalPathSheet(
                             fontFamily = FontFamily.Monospace,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (status == "VERIFIED") colors.accent else colors.textMuted,
+                            color = if (status == "OK") colors.accent else colors.textMuted,
                             letterSpacing = 0.1.sp,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -155,7 +155,7 @@ fun FaceplateSignalPathSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // "What would change the path" Card (B-011)
+            // "What would change the path" Card
             Surface(
                 shape = RoundedCornerShape(8.dp),
                 color = colors.surface,
